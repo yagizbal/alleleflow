@@ -1,26 +1,32 @@
 import numpy as np
 import random
 
-def generate_genome(gene_type, genome_size, genome_range=None,num_positives=None):
+def generate_genome(gene_type, genome_size, genome_range=None,num_positives=None,no_overlap=False):
+    genome = np.zeros(genome_size, dtype=int)
+
     if gene_type == 'binary':
-        if num_positives is None:
-            gene = np.random.randint(2, size=genome_size)
-        else:
-            gene = np.zeros(genome_size, dtype=int)
-            positive_indices = np.random.choice(genome_size, num_positives, replace=False)
-            gene[positive_indices] = 1
+        if num_positives==None:
+            num_positives = np.random.randint(1,genome_size)
+
+        positive_indices = np.random.choice(genome_size, num_positives, replace=False)
+        genome[positive_indices] = 1
 
     elif gene_type == 'integer':
-        low, high = genome_range if genome_range else (-100, 100)
-        gene = np.random.randint(low, high, size=genome_size)
+        low, high = genome_range
+
+        if no_overlap and (genome_size <= high - low + 1):
+            random_values = np.random.choice(np.arange(low, high+1), genome_size, replace=False)
+        else:
+            random_values = np.random.randint(low, high+1)
+        genome = random_values
 
     elif gene_type == 'real':
         low, high = genome_range if genome_range else (-1.0, 1.0)
-        gene = np.random.uniform(low, high, size=genome_size)
+        genome = np.random.uniform(low, high, size=genome_size)
 
     else:
         raise ValueError("Unknown gene_type: {}".format(gene_type))
-    return gene
+    return genome
 
 def initialize_population(population_size,num_genes,gene_type,gene_range=None,num_positives=None):
     population = [generate_genome(gene_type, num_genes, gene_range,num_positives) for _ in range(population_size)]
@@ -70,3 +76,4 @@ def crossover(parent1, parent2, crossover_type='one_point'):
             raise ValueError("Unknown crossover_type: {}".format(crossover_type))
 
     return offspring1, offspring2
+    
