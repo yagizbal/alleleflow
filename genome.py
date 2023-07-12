@@ -4,6 +4,7 @@ import random
 def generate_genome(gene_type, genome_size, genome_range=None,num_positives=None,no_overlap=False):
     genome = np.zeros(genome_size, dtype=int)
 
+
     if gene_type == 'binary':
         if num_positives==None:
             num_positives = np.random.randint(1,genome_size)
@@ -17,7 +18,8 @@ def generate_genome(gene_type, genome_size, genome_range=None,num_positives=None
         if no_overlap and (genome_size <= high - low + 1):
             random_values = np.random.choice(np.arange(low, high+1), genome_size, replace=False)
         else:
-            random_values = np.random.randint(low, high+1)
+            random_values = np.random.randint(low, high+1,size=genome_size)
+            print(random_values)
         genome = random_values
 
     elif gene_type == 'real':
