@@ -1,49 +1,64 @@
 import numpy as np
 import random
 
-def generate_genome(gene_type, genome_size, genome_range=None,num_positives=None,no_overlap=False):
+def generate_genome(gene_type, genome_size, gene_range=None,num_positives=None,no_overlap=False):
     genome = np.zeros(genome_size, dtype=int)
-
-
     if gene_type == 'binary':
         if num_positives==None:
-            num_positives = np.random.randint(1,genome_size)
+            num_positives = np.zeros(genome_size)
 
         positive_indices = np.random.choice(genome_size, num_positives, replace=False)
         genome[positive_indices] = 1
 
     elif gene_type == 'integer':
-        low, high = genome_range
+        low, high = gene_range
 
         if no_overlap and (genome_size <= high - low + 1):
             random_values = np.random.choice(np.arange(low, high+1), genome_size, replace=False)
         else:
             random_values = np.random.randint(low, high+1,size=genome_size)
-            print(random_values)
         genome = random_values
 
     elif gene_type == 'real':
-        low, high = genome_range if genome_range else (-1.0, 1.0)
+        low, high = gene_range if gene_range else (-1.0, 1.0)
         genome = np.random.uniform(low, high, size=genome_size)
 
     else:
         raise ValueError("Unknown gene_type: {}".format(gene_type))
     return genome
 
-def initialize_population(population_size,num_genes,gene_type,gene_range=None,num_positives=None):
-    population = [generate_genome(gene_type, num_genes, gene_range,num_positives) for _ in range(population_size)]
-    return population
+def generate_population(population_size, genome_size, gene_type, gene_range=None, num_positives=None, no_overlap=None,diversity = 0):
+    population = []
+    for _ in range(population_size):
+        population.append(generate_genome(gene_type=gene_type, genome_size=genome_size, gene_range=gene_range, num_positives=num_positives,no_overlap=no_overlap))
+    return population  
 
-def mutation(individual, gene_type, mutation_rate, gene_range=None):
+def mutation(individual, gene_type, mutation_rate, gene_range=None, mutation_strength=1.0,no_overlap=False):
     for i in range(len(individual)):
             if random.random() < mutation_rate:
+                
                 if gene_type == 'binary':
                     individual[i] = 1 - individual[i]  # flip the gene
+
+
                 elif gene_type == 'integer':
                     low, high = gene_range
+                    rewind = individual[i]
                     individual[i] = random.randint(low, high)  # assign a new random value within the allowed range
+                    
+                    if no_overlap==True:
+                        while individual[i] in individual[:i]:
+                            individual[i] = rewind
+                
+                elif gene_type == 'real':
+                    low, high = gene_range
+
+                    individual[i] += random.uniform(-mutation_strength, mutation_strength)
+                    #mutation strenght is the amount of change that can happen to the gene
+                    individual[i] = max(min(individual[i], high), low)
 
     return individual
+
 
 def crossover(parent1, parent2, crossover_type='one_point'):
     offspring1, offspring2 = parent1.copy(), parent2.copy()
