@@ -49,7 +49,12 @@ class EvolutionaryAlgorithm:
                 if random.random() < mutation_rate:
                     
                     if self.gene_type == 'binary':
-                        individual[i] = 1 - individual[i]
+                        if random.random() < mutation_rate:
+                            # Select two different positions in the individual
+                            pos1, pos2 = random.sample(range(len(individual)), 2)
+                            # Swap the positions
+                            individual[pos1], individual[pos2] = individual[pos2], individual[pos1]
+
 
                     elif self.gene_type == 'integer':
                         low, high = self.gene_range
@@ -114,18 +119,20 @@ class EvolutionaryAlgorithm:
     
     #self using version of the population_sort function
     def population_sort(self, population):
-        list_of_fitnesses = [(individual, self.fitness_func((individual))[0]) for individual in population]
+        list_of_fitnesses = [(individual, self.fitness_func(individual, self.gene_type)[0]) for individual in population]
         list_of_fitnesses.sort(key=lambda x: x[1], reverse=True)
         return list_of_fitnesses
     
     #self using version of the train function
-    def train(self, population, generations, mutation_rate, crossover_type, replacement_rate, mutation_strength, verbose=True):
+    def train(self, population, generations, mutation_rate, crossover_type, replacement_rate, mutation_strength, no_overlap, num_positives=None, verbose=True):
         self.population = population
         self.generations = generations
         self.mutation_rate = mutation_rate
         self.crossover_type = crossover_type
         self.replacement_rate = replacement_rate
         self.mutation_strength = mutation_strength
+        self.no_overlap = no_overlap
+        self.num_positives = num_positives
         self.verbose = verbose
 
         for gen in range(self.generations):
@@ -148,8 +155,17 @@ class EvolutionaryAlgorithm:
                 offspring1 = self.mutation(individual=offspring1, mutation_rate=self.mutation_rate, mutation_strength=self.mutation_strength)
                 offspring2 = self.mutation(individual=offspring2, mutation_rate=self.mutation_rate, mutation_strength=self.mutation_strength)
 
-                self.mutate_overlap(offspring1)
-                self.mutate_overlap(offspring2)
+                # check for overlap
+                if self.no_overlap:
+                    self.mutate_overlap(offspring1)
+                    self.mutate_overlap(offspring2)
+
+                #check to see if num_positives is met
+                if self.num_positives:
+                    if sum(offspring1) != self.num_positives:
+                        offspring1 = self.mutation(individual=offspring1, mutation_rate=1, mutation_strength=self.mutation_strength)
+                    if sum(offspring2) != self.num_positives:
+                        offspring2 = self.mutation(individual=offspring2, mutation_rate=1, mutation_strength=self.mutation_strength)
 
                 self.population.append(offspring1)
                 self.population.append(offspring2)
@@ -158,7 +174,7 @@ class EvolutionaryAlgorithm:
                 if gen % (self.generations/100) == 0:
                     print("generation", gen, "individuals" ,len(self.population))
                     print("most fit individual", self.population[0])
-                    print("fitness score", self.fitness_func(self.population[0])[0])
+                    print("fitness score", self.fitness_func(self.population[0], self.gene_type)[0])
                     print("\n")
 
         return self.population
