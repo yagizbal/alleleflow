@@ -2,13 +2,14 @@ import random
 import numpy as np
 
 class EvolutionaryAlgorithm:
-    def __init__(self, fitness_func, gene_type, gene_range=None):
+    def __init__(self, fitness_func, gene_type, no_overlap=False, gene_range=None):
         self.fitness_func = fitness_func
         self.gene_type = gene_type
         self.gene_range = gene_range
+        self.no_overlap = no_overlap
 
     #self using version of the generate_genome function
-    def generate_genome(self, genome_size, num_positives=None, no_overlap=False):
+    def generate_genome(self, genome_size, num_positives=None):
         self.genome = np.zeros(genome_size, dtype=int)
         
         if self.gene_type == 'binary':
@@ -21,7 +22,7 @@ class EvolutionaryAlgorithm:
         elif self.gene_type == 'integer':
             low, high = self.gene_range
 
-            if no_overlap and (genome_size <= high - low + 1):
+            if self.no_overlap and (genome_size <= high - low + 1):
                 random_values = np.random.choice(np.arange(low, high+1), genome_size, replace=False)
             else:
                 random_values = np.random.randint(low, high+1,size=genome_size)
@@ -35,10 +36,10 @@ class EvolutionaryAlgorithm:
         return self.genome
 
     #self using version of the generate_population function
-    def generate_population(self, population_size, genome_size, num_positives=None, no_overlap=None,diversity = 0):
+    def generate_population(self, population_size, genome_size, num_positives=None, diversity = 0):
         self.population = []
         for _ in range(population_size):
-            self.population.append(self.generate_genome(genome_size=genome_size, num_positives=num_positives,no_overlap=no_overlap))
+            self.population.append(self.generate_genome(genome_size=genome_size, num_positives=num_positives))
         
         return self.population
     
@@ -49,11 +50,14 @@ class EvolutionaryAlgorithm:
                 if random.random() < mutation_rate:
                     
                     if self.gene_type == 'binary':
-                        if random.random() < mutation_rate:
-                            # Select two different positions in the individual
-                            pos1, pos2 = random.sample(range(len(individual)), 2)
-                            # Swap the positions
-                            individual[pos1], individual[pos2] = individual[pos2], individual[pos1]
+                        # Get positions of all queens and empty spaces
+                        positive_positions = [i for i, x in enumerate(individual) if x == 1]
+                        empty_positions = [i for i, x in enumerate(individual) if x == 0]
+                        # If there are at least one queen and one empty space, select one queen and one empty space and swap their positions
+                        if positive_positions and empty_positions:
+                            positive_pos = random.choice(positive_positions)
+                            empty_pos = random.choice(empty_positions)
+                            individual[positive_pos], individual[empty_pos] = individual[empty_pos], individual[positive_pos]
 
 
                     elif self.gene_type == 'integer':
@@ -87,18 +91,31 @@ class EvolutionaryAlgorithm:
                 if random.random() < 0.5:
                     offspring1[i], offspring2[i] = parent2[i], parent1[i]
 
-        elif crossover_type == 'ordered':
-            start, end = sorted([random.randrange(len(parent1)) for _ in range(2)])
-            offspring1[:], offspring2[:] = parent2[:], parent1[:]
-            offspring1[start:end], offspring2[start:end] = parent1[start:end], parent2[start:end]
-            for i in range(len(parent1)):
-                while i < start or i >= end:
-                    while offspring1[i] in parent1[start:end]:
-                        offspring1[i] = parent2[np.where(parent1==offspring1[i])[0][0]]
-                    while offspring2[i] in parent2[start:end]:
-                        offspring2[i] = parent1[np.where(parent2==offspring2[i])[0][0]]
-                        i += 1
+        elif crossover_type == "ordered_crossover":
+            point1 = random.randint(1, len(parent1)-1)
+            point2 = random.randint(point1, len(parent1))
+            offspring1[point1:point2] = parent2[point1:point2]
+            offspring2[point1:point2] = parent1[point1:point2]
 
+            if self.no_overlap:
+                offspring1 = self.mutate_overlap(offspring1)
+                offspring2 = self.mutate_overlap(offspring2)
+    
+        elif crossover_type == "partially_mapped":
+            point1 = random.randint(1, len(parent1)-1)
+            point2 = random.randint(point1, len(parent1))
+            offspring1[point1:point2] = parent2[point1:point2]
+            offspring2[point1:point2] = parent1[point1:point2]
+
+            if self.no_overlap:
+                offspring1 = self.mutate_overlap(offspring1)
+                offspring2 = self.mutate_overlap(offspring2)
+
+
+        elif crossover_type == "none":
+            pass
+            
+        
         else:
             raise ValueError("Unknown crossover_type: {}".format(crossover_type))
 
@@ -124,14 +141,13 @@ class EvolutionaryAlgorithm:
         return list_of_fitnesses
     
     #self using version of the train function
-    def train(self, population, generations, mutation_rate, crossover_type, replacement_rate, mutation_strength, no_overlap, num_positives=None, verbose=True):
+    def train(self, population, generations, mutation_rate, crossover_type, replacement_rate, mutation_strength, random_mutations = 0 ,num_positives=None, verbose=True):
         self.population = population
         self.generations = generations
         self.mutation_rate = mutation_rate
         self.crossover_type = crossover_type
         self.replacement_rate = replacement_rate
         self.mutation_strength = mutation_strength
-        self.no_overlap = no_overlap
         self.num_positives = num_positives
         self.verbose = verbose
 
@@ -142,9 +158,10 @@ class EvolutionaryAlgorithm:
             for i in range(len(self.population)):
                 self.population[i] = list(self.population[i][0])
 
+
             # replace the individuals according to replacement rate
             num_replacements = int(len(self.population)*self.replacement_rate)
-            for _ in range(num_replacements):
+            for _ in range(num_replacements): 
                 self.population.pop()
                 self.population.pop()
 
@@ -160,15 +177,19 @@ class EvolutionaryAlgorithm:
                     self.mutate_overlap(offspring1)
                     self.mutate_overlap(offspring2)
 
-                #check to see if num_positives is met
-                if self.num_positives:
-                    if sum(offspring1) != self.num_positives:
-                        offspring1 = self.mutation(individual=offspring1, mutation_rate=1, mutation_strength=self.mutation_strength)
-                    if sum(offspring2) != self.num_positives:
-                        offspring2 = self.mutation(individual=offspring2, mutation_rate=1, mutation_strength=self.mutation_strength)
-
                 self.population.append(offspring1)
                 self.population.append(offspring2)
+
+            for pop_ in range(len(self.population)):
+                #randomly mutate an individual according to the random mutations number
+                #unless it is in the top of the population
+                if pop_ > len(self.population)*replacement_rate:
+                    if random.random() < random_mutations:
+                        self.population[pop_] = self.mutation(individual=self.population[pop_], mutation_rate=self.mutation_rate, mutation_strength=self.mutation_strength)
+                        if self.no_overlap:
+                            self.mutate_overlap(self.population[pop_])
+        
+            
 
             if self.verbose:
                 if gen % (self.generations/100) == 0:
