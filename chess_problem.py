@@ -1,25 +1,35 @@
 import numpy as np
+import random
 
+def create_chessboard(genome, representation, size=8):
 
-def create_chessboard(genome, representation,size=8):
     chessboard = np.zeros((size, size), dtype=int)
 
-    if representation == 'integer':
-        for pos in genome:
-            row = pos // size  # row number
-            col = pos % size  # column number
-            chessboard[row][col] = 1
+
+    if representation == 'binary':
+
+        binary_genome = np.concatenate(list(genome.genes.values()))
     
-    elif representation == 'binary':
-        for i, is_queen in enumerate(genome):
-            if is_queen:  # this is a queen
-                row = i // size  # row number
-                col = i % size  # column number
-                chessboard[row][col] = 1
+        if len(binary_genome.shape) == 1:
+            binary_genome = binary_genome.reshape(size, size)
+        
+            chessboard[binary_genome==1] = 1
+
+    elif representation == 'integer':
+
+        integer_genome = next(iter(genome.genes.values()))
+
+        for i, pos in enumerate(integer_genome):
+
+                    row, col = np.unravel_index(pos, (size, size))
+                    chessboard[row, col] = 1
+
     else:
-        raise ValueError("Invalid representation. Expected 'integer' or 'binary'.")
+        raise ValueError("Invalid representation")
 
     return chessboard
+
+
 
 
 def fitness(individual,representation,size=8):
