@@ -1,3 +1,5 @@
+import numpy as np
+
 def create_chessboard(genome, representation, size=8):
 
     chessboard = np.zeros((size, size), dtype=int)
