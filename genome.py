@@ -1,5 +1,6 @@
 import random
 import numpy as np 
+import copy 
 
 class Chromosome:
     def __init__(self, chromosome_type, gene_type, gene_range=None, no_overlap=False):
@@ -49,9 +50,12 @@ class Chromosome:
             self.genes[mutation_indices] = np.random.randint(low, high+1, size=num_mutations)
         elif self.gene_type == 'real':
             low, high = self.gene_range
-            self.genes[mutation_indices] = np.random.uniform(low, high, size=num_mutations)    
+            self.genes[mutation_indices] = np.random.uniform(low, high, size=num_mutations)
 
-    def crossover(self, other, crossover_rate, crossover_type='single_point'):
+
+    def crossover(self, other, crossover_rate, no_overlap, crossover_type='single_point'):
+        #initial values as backups in case you need to revert
+
         if random.random() < crossover_rate:
             if crossover_type == 'single_point':
                 crossover_point = random.randint(1, len(self.genes) - 1)
@@ -69,8 +73,14 @@ class Chromosome:
                         self.genes[i], other.genes[i] = other.genes[i], self.genes[i]
             else:
                 raise ValueError("Unknown crossover type: {}".format(crossover_type))
-        return self.genes, other.genes
-    
+        
+
+
+
+
+    def check_overlap(self):
+        return len(set(self.genes)) != len(self.genes)
+        #this will return true if there are duplicates in the chromosome
 
 
 class Genome:
@@ -93,9 +103,9 @@ class Genome:
         chromosome.mutate(mutation_strength)
         self.update_genes()
 
-    def crossover(self, other_genome, crossover_rate, crossover_type='single_point'):
+    def crossover(self, other_genome, crossover_rate, no_overlap, crossover_type='single_point'):
         for i in range(self.num_chromosomes):
-            self.chromosomes[i].crossover(other_genome.chromosomes[i], crossover_rate, crossover_type)
+            self.chromosomes[i].crossover(other_genome.chromosomes[i], no_overlap, crossover_rate, crossover_type,)
         self.update_genes()
         other_genome.update_genes()
 
@@ -131,10 +141,15 @@ class Genome:
         # Return new genomes
         return new_genome1, new_genome2
 
-
     def update_genes(self):
         self.genes = {i: chromosome.genes for i, chromosome in self.chromosomes.items()}
 
+    def check_overlap(self):
+        for chromosome in self.chromosomes.values():
+            if chromosome.check_overlap():
+                return True
+        return False
+        
 
 class Population:
     def __init__(self, population_size, num_chromosomes, chromosome_size, gene_type, gene_range=None, no_overlap=False, num_positives=None):
@@ -183,21 +198,29 @@ class Population:
 
                 # Recombine into two new genomes
                 new_genome1 = Genome(num_chromosomes=best1.num_chromosomes, chromosome_size=best1.chromosome_size, representation=best1.representation, gene_range=best1.gene_range, no_overlap=best1.no_overlap, num_positives=best1.num_positives)
-                new_genome2 = Genome(num_chromosomes=best1.num_chromosomes, chromosome_size=best1.chromosome_size, representation=best1.representation, gene_range=best1.gene_range, no_overlap=best1.no_overlap, num_positives=best1.num_positives)
+                new_genome2 = Genome(num_chromosomes=best2.num_chromosomes, chromosome_size=best2.chromosome_size, representation=best2.representation, gene_range=best2.gene_range, no_overlap=best2.no_overlap, num_positives=best2.num_positives)
 
-                for i in range(best1.num_chromosomes):
-                    new_genome1.chromosomes[i] = best1.chromosomes[i] 
-                    new_genome2.chromosomes[i] = best2.chromosomes[i]
+                backup1 = copy.deepcopy(new_genome1)
+                backup2 = copy.deepcopy(new_genome2)
 
+                
                 if random.random() < mutation_rate:
                     new_genome1.mutate(mutation_strength)
                 if random.random() < mutation_rate:
                     new_genome2.mutate(mutation_strength)
 
                 if random.random() < crossover_rate: #crossover function from chromosome
-                    new_genome1.crossover(new_genome2, crossover_rate, crossover_type)
-                    
-
+                    new_genome1.crossover(other_genome=new_genome2, no_overlap=self.no_overlap, crossover_rate=crossover_rate, crossover_type=crossover_type)
+                
+                if new_genome1.check_overlap():
+                    #print genes
+                    #print("ab",new_genome1.genes,backup1.genes)
+                    new_genome1.genes = backup1.genes
+                    #print(new_genome1.genes)
+                    #print("\n")
+                if new_genome2.check_overlap():
+                    #print("ba",new_genome2.genes,backup2.genes)
+                    new_genome2.genes = backup2.genes
 
                 #add the new genomes to the population tuple
                 self.population = self.population + (new_genome1,new_genome2)

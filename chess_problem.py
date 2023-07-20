@@ -1,6 +1,3 @@
-import numpy as np
-import random
-
 def create_chessboard(genome, representation, size=8):
 
     chessboard = np.zeros((size, size), dtype=int)
@@ -28,8 +25,6 @@ def create_chessboard(genome, representation, size=8):
         raise ValueError("Invalid representation")
 
     return chessboard
-
-
 
 
 def fitness(individual,representation,size=8):
