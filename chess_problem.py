@@ -1,64 +1,104 @@
 import numpy as np
+from genome import *
+
 
 def create_chessboard(genome, representation, size=8):
 
-    chessboard = np.zeros((size, size), dtype=int)
-
-
-    if representation == 'binary':
-
-        binary_genome = np.concatenate(list(genome.genes.values()))
+    chessboard = np.zeros((size+2, size+2), dtype=int)
     
-        if len(binary_genome.shape) == 1:
-            binary_genome = binary_genome.reshape(size, size)
+    if representation == 'binary':
         
-            chessboard[binary_genome==1] = 1
-
+        # Map binary genome to expanded chessboard
+        binary_genome = np.concatenate(list(genome.genes.values())).reshape(size, size)        
+        chessboard[1:-1,1:-1] = binary_genome 
+    
     elif representation == 'integer':
-
-        integer_genome = next(iter(genome.genes.values()))
-
+        
+        # Map integer genome to expanded chessboard
+        integer_genome = np.concatenate(list(genome.genes.values()))
         for i, pos in enumerate(integer_genome):
-
-                    row, col = np.unravel_index(pos, (size, size))
-                    chessboard[row, col] = 1
-
-    else:
-        raise ValueError("Invalid representation")
+            row, col = np.unravel_index(pos, (size, size))
+            chessboard[row+1, col+1] = 1
 
     return chessboard
 
+def fitness_non_attacking(individual, representation, size=8):
 
-def fitness(individual,representation,size=8):
-    chessboard = create_chessboard(individual,representation)
-    total_pairs = size * (size - 1) // 2
-
+    chessboard = create_chessboard(individual, representation, size)
+    
     queens = np.array(np.where(chessboard == 1)).T
-    board_of_collisions = np.zeros((size, size), dtype=int) #this board will mark the collisions, adding a point for each collision, so that if a queen has 2 collisions, it will have a 2 in the board_of_collisions
-
-    # Iterate over each queen
-    for queen in queens:
-
-        y = queen[0]  # row number
-        x = queen[1]  # column number
-
-        # Check the row for collisions
-        for i in range(size):
-            if i != x and chessboard[y][i] == 1:  # Avoid checking with itself
-                board_of_collisions[y][x] += 1
+    
+    total_pairs = size * (size - 1) // 2
+    non_attacking_pairs = 0
+    
+    for i in range(len(queens)):
+        for j in range(i+1, len(queens)):
+            qi = queens[i]
+            qj = queens[j]
+            
+            if (qi[0] != qj[0] and 
+                qi[1] != qj[1] and
+                abs(qi[0] - qj[0]) != abs(qi[1] - qj[1])):
                 
-        # Check the column for collisions
-        for i in range(size):
-            if i != y and chessboard[i][x] == 1:  # Avoid checking with itself
-                board_of_collisions[y][x] += 1
+                non_attacking_pairs += 1
+                
+    fitness = non_attacking_pairs
+    
+    return (fitness,)
 
-        # Check diagonals for collisions
-        for i in range(size):
-            for j in range(size):
-                if i != y and j != x and abs(i - y) == abs(j - x) and chessboard[i][j] == 1:  # Avoid checking with itself and only check diagonal
-                    board_of_collisions[y][x] += 1
+def diagonal_attacks(chessboard, y, x):
+    
+    attacks = 0
+    
+    # Top right
+    iy, ix = y-1, x+1
+    while chessboard[iy, ix] == 1:
+        attacks += 1
+        iy -= 1
+        ix += 1
+        
+    # Top left        
+    iy, ix = y-1, x-1
+    while chessboard[iy, ix] == 1:
+        attacks += 1
+        iy -= 1
+        ix -= 1 
+        
+    # Bottom right
+    iy, ix = y+1, x+1
+    while chessboard[iy, ix] == 1:
+        attacks += 1
+        iy += 1
+        ix += 1
 
-    total_collisions = np.sum(board_of_collisions) / 2  # Each collision is counted twice so divide by 2
-    fitness_score = total_pairs - total_collisions
+    # Bottom left
+    iy, ix = y+1, x-1
+    while chessboard[iy, ix] == 1:
+        attacks += 1
+        iy += 1
+        ix -= 1
 
-    return fitness_score, board_of_collisions
+    return attacks
+
+
+test_population = Population(population_size=20, 
+                             num_chromosomes=1,
+                             chromosome_size=8, 
+                             gene_type='integer', 
+                             gene_range=(0,63),
+                             no_overlap=True)
+
+test_population.train(fitness_function=fitness_non_attacking, 
+                      num_generations = 100000,
+                      selection_pressure=0.04,
+                      mutation_rate=0.05,
+                        mutation_strength=0.5,
+                        crossover_rate=0.5,
+                        crossover_type='two_point',
+                        replacement_rate=0.5,
+                        verbose=True)
+print(test_population.population[0].genes)
+
+chessboard = create_chessboard(test_population.population[0], 'integer', size=8)
+chessboard = chessboard[1:-1,1:-1]
+print(chessboard)
