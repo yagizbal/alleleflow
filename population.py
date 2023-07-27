@@ -61,16 +61,12 @@ class Population:
                 best2 = random.choices(self.population, weights=weights)[0]
 
                 # Recombine into two new genomes
-                new_genome1 = Individual(num_chromosomes=best1.num_chromosomes, chromosome_size=best1.chromosome_size, 
-                                         representation=best1.representation, gene_range=best1.gene_range, no_overlap=best1.no_overlap, num_positives=best1.num_positives)
-                new_genome2 = Individual(num_chromosomes=best2.num_chromosomes, chromosome_size=best2.chromosome_size,
-                                          representation=best2.representation, gene_range=best2.gene_range, no_overlap=best2.no_overlap, num_positives=best2.num_positives)
 
-                backup1 = copy.deepcopy(new_genome1)
-                backup2 = copy.deepcopy(new_genome2)
+                new_genome1 = copy.deepcopy(best1)
+                new_genome2 = copy.deepcopy(best2)
 
                 #recombinate new_genome1 with new_genome2, note that recombination() is different from crossover()
-                new_genome1.recombination(new_genome2)
+
             
                 for i in range(len(new_genome1.genome)):
                     if random.random() < mutation_rate: 
@@ -81,7 +77,6 @@ class Population:
                         #crossover chromosome individually
                         new_genome1.genome[i].crossover(new_genome2.genome[i])
                 
-                #recombination
                 
 
                 #add new genome to population
