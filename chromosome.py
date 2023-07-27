@@ -1,5 +1,6 @@
 import random
-import numpy as np 
+import numpy as np
+
 
 class Chromosome:
     def __init__(self, chromosome_size, gene_type, gene_range=None, no_overlap=False,num_positives=None):
@@ -127,49 +128,49 @@ class Chromosome:
             for i in range(len(ls[0])):
                 self.genes[ls[1][i]] = ls[0][i]
             
-
     def check_overlap(self):
         return len(set(self.genes)) != len(self.genes)
         #this will return true if there are duplicates in the chromosome
 
-#for i in range(10):
-#    chromosome1 = Chromosome(chromosome_size=10, gene_type='binary', num_positives=4)
-#    print("generated", chromosome1.genes, type(chromosome1.genes), sum(chromosome1.genes))
-#    chromosome1.mutate(mutation_type='uniform', mutation_strength=0.3)
-#    print("mutated  ",chromosome1.genes, type(chromosome1.genes), "sum", sum(chromosome1.genes))
-#    print("\n")
+'''
+for i in range(10):
+    chromosome1 = Chromosome(chromosome_size=10, gene_type='binary', num_positives=4)
+    print("generated", chromosome1.genes, type(chromosome1.genes), sum(chromosome1.genes))
+    chromosome1.mutate(mutation_type='uniform', mutation_strength=0.3)
+    print("mutated  ",chromosome1.genes, type(chromosome1.genes), "sum", sum(chromosome1.genes))
+    print("\n")
 
 #no specified number of positives
-#for i in range(10):
-#    chromosome1 = Chromosome(chromosome_size=10, gene_type='binary')
-#    print("generated", chromosome1.genes, type(chromosome1.genes), sum(chromosome1.genes))
-#    chromosome1.mutate(mutation_type='uniform', mutation_strength=0.5)
-#    print("mutated  ",chromosome1.genes, type(chromosome1.genes), "sum", sum(chromosome1.genes))
-#    print("\n")
+for i in range(10):
+    chromosome1 = Chromosome(chromosome_size=10, gene_type='binary')
+    print("generated", chromosome1.genes, type(chromosome1.genes), sum(chromosome1.genes))
+    chromosome1.mutate(mutation_type='uniform', mutation_strength=0.5)
+    print("mutated  ",chromosome1.genes, type(chromosome1.genes), "sum", sum(chromosome1.genes))
+    print("\n")
 
 #for i in range(10):
-#    chromosome2 = Chromosome(chromosome_size=10, gene_type='integer', gene_range=(1,15), no_overlap=True)
-#    print("generated", chromosome2.genes, type(chromosome2.genes), chromosome2.check_overlap())
-#    chromosome2.mutate(mutation_type='uniform', mutation_strength=0.3)
-#    print("mutated  ",chromosome2.genes, type(chromosome2.genes), "overlap", chromosome2.check_overlap())
-#    print("\n")
+    chromosome2 = Chromosome(chromosome_size=10, gene_type='integer', gene_range=(1,15), no_overlap=True)
+    print("generated", chromosome2.genes, type(chromosome2.genes), chromosome2.check_overlap())
+    chromosome2.mutate(mutation_type='uniform', mutation_strength=0.3)
+    print("mutated  ",chromosome2.genes, type(chromosome2.genes), "overlap", chromosome2.check_overlap())
+
+    print("\n")
 
 #with overlap
-#for i in range(10):
-#    chromosome2 = Chromosome(chromosome_size=10, gene_type='integer', gene_range=(1,15), no_overlap=False)
-#    print("generated", chromosome2.genes, type(chromosome2.genes), chromosome2.check_overlap())
-#    chromosome2.mutate(mutation_type='uniform', mutation_strength=0.3)
-#    print("mutated  ",chromosome2.genes, type(chromosome2.genes), "overlap", chromosome2.check_overlap())
-#    print("\n")
+for i in range(10):
+    chromosome2 = Chromosome(chromosome_size=10, gene_type='integer', gene_range=(1,15), no_overlap=False)
+    print("generated", chromosome2.genes, type(chromosome2.genes), chromosome2.check_overlap())
+    chromosome2.mutate(mutation_type='uniform', mutation_strength=0.3)
+    print("mutated  ",chromosome2.genes, type(chromosome2.genes), "overlap", chromosome2.check_overlap())
+    print("\n")
 
 #crossover check
-#for i in range(10):
-#    chromosome1 = Chromosome(chromosome_size=10, gene_type='integer', gene_range=(1,100), no_overlap=True)
-#    chromosome2 = Chromosome(chromosome_size=10, gene_type='integer', gene_range=(1,100), no_overlap=True)
-#    print("chromosome 1 ", chromosome1.genes, type(chromosome1.genes), chromosome1.check_overlap())
-#    print("chromosome 2 ", chromosome2.genes, type(chromosome2.genes), chromosome2.check_overlap())
+for i in range(10):
+    chromosome1 = Chromosome(chromosome_size=10, gene_type='integer', gene_range=(1,100), no_overlap=True)
+    chromosome2 = Chromosome(chromosome_size=10, gene_type='integer', gene_range=(1,100), no_overlap=True)
+    print("chromosome 1 ", chromosome1.genes, type(chromosome1.genes), chromosome1.check_overlap())
+    print("chromosome 2 ", chromosome2.genes, type(chromosome2.genes), chromosome2.check_overlap())
 
-#    chromosome1.crossover(chromosome2, crossover_type='ordered_crossover')
-#    print("crossovered 1", chromosome1.genes, type(chromosome1.genes), chromosome1.check_overlap(),"\n")
-
-
+    chromosome1.crossover(chromosome2, crossover_type='ordered_crossover')
+    print("crossovered 1", chromosome1.genes, type(chromosome1.genes), chromosome1.check_overlap(),"\n")
+'''
