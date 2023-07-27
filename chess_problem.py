@@ -1,5 +1,4 @@
-import numpy as np
-from genome import *
+from population import *
 
 
 def create_chessboard(genome, representation, size=8):
@@ -7,16 +6,20 @@ def create_chessboard(genome, representation, size=8):
     chessboard = np.zeros((size+2, size+2), dtype=int)
     
     if representation == 'binary':
+
+        binary_genome = np.concatenate(genome.genes) # flatten to 1D array
+        binary_genome = binary_genome.reshape(size, size) # reshape to 8x8
         
-        # Map binary genome to expanded chessboard
-        binary_genome = np.concatenate(list(genome.genes.values())).reshape(size, size)        
-        chessboard[1:-1,1:-1] = binary_genome 
+        for i in range(size):
+            for j in range(size):
+                if binary_genome[i,j] == 1:
+                    chessboard[i+1, j+1] = 1
+
+            
     
     elif representation == 'integer':
         
-        # Map integer genome to expanded chessboard
-        integer_genome = np.concatenate(list(genome.genes.values()))
-        for i, pos in enumerate(integer_genome):
+        for i, pos in enumerate(genome.genes):
             row, col = np.unravel_index(pos, (size, size))
             chessboard[row+1, col+1] = 1
 
@@ -80,25 +83,52 @@ def diagonal_attacks(chessboard, y, x):
 
     return attacks
 
-
-test_population = Population(population_size=20, 
+"""
+test_population = Population(population_size=100, 
                              num_chromosomes=1,
                              chromosome_size=8, 
-                             gene_type='integer', 
+                             representation='integer', 
                              gene_range=(0,63),
                              no_overlap=True)
 
 test_population.train(fitness_function=fitness_non_attacking, 
-                      num_generations = 100000,
-                      selection_pressure=0.04,
-                      mutation_rate=0.05,
-                        mutation_strength=0.5,
-                        crossover_rate=0.5,
-                        crossover_type='two_point',
-                        replacement_rate=0.5,
+                      num_generations = 10000,
+                      selection_pressure=0.05,
+                      mutation_rate=0.1,
+                        mutation_strength=0.2,
+                        mutation_type = "uniform",
+                        crossover_rate=0.2,
+                        crossover_type='ordered_crossover',
+                        replacement_rate=0.3,
                         verbose=True)
-print(test_population.population[0].genes)
 
+print(test_population.population[0].genes)
 chessboard = create_chessboard(test_population.population[0], 'integer', size=8)
 chessboard = chessboard[1:-1,1:-1]
 print(chessboard)
+"""
+"""
+test_population2 = Population(population_size=100,
+                                num_chromosomes=8,
+                                chromosome_size=8,
+                                representation='binary',
+                                num_positives=1)
+
+test_population2.train(fitness_function=fitness_non_attacking,
+                        num_generations=10000,
+                        selection_pressure=0.05,
+                        mutation_rate=0.1,
+                        mutation_strength=1,
+                        mutation_type="replacement",
+                        crossover_rate=0.2,
+                        crossover_type='ordered_crossover',
+                        replacement_rate=0.3,
+                        verbose=True)
+
+create_chessboard(test_population2.population[0], 'binary', size=8)
+
+print(test_population2.population[0].genes)
+chessboard = create_chessboard(test_population2.population[0], 'binary', size=8)
+chessboard = chessboard[1:-1,1:-1]
+print(chessboard)
+"""
