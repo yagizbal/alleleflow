@@ -46,7 +46,7 @@ class Population:
         return unique_objects_population, len(self.population) - len(unique_objects_population)
 
 
-    def train(self,fitness_function, selection_pressure, mutation_rate, mutation_type, mutation_strength, crossover_rate, 
+    def train(self,fitness_function, selection_pressure, mutation_rate, mutation_type, mutation_strength, crossover_rate, scramble_rate, scramble_strength,
               crossover_type,replacement_rate, diversity=None, diversity_percent=None, num_generations=None, convergence=None,verbose=True):
         if num_generations is None and convergence is None:
             num_generations = 10000
@@ -63,13 +63,13 @@ class Population:
                 fitnesses.append(fitness_function(individual=genome,representation=self.representation))
             
 
-            if verbose:
+            if verbose: #print out important stuff 
                 percent_completed = int(100 * generation / num_generations)
                 if percent_completed > last:
                     print("Percent completed:", percent_completed)
                     print("Best fitness:", fitnesses[0][0])
                     print("Best genome:", self.population[0].genes)
-                    print("Min:", np.min(fitnesses), "Max:", np.max(fitnesses), "Avg:", np.mean(fitnesses),"\n")
+                    print("Min:", np.min(fitnesses[0]), "Max:", np.max(fitnesses[0]), "Avg:", np.mean(fitnesses[0]),"\n")
 
                     fitness_history.append(fitnesses[0][0])
 
@@ -82,7 +82,7 @@ class Population:
             population_size = len(self.population)
             replace_num = int(population_size * replacement_rate)
 
-            for i in range(int(replace_num)): #this part is the "breeding" and replacement
+            for i in range(int(replace_num)): #this part is the breeding, variation and replacement
                 zipped = zip(self.population, fitnesses) 
                 zipped = sorted(zipped, key=lambda x: x[1][0], reverse=True)
                 self.population, fitnesses = zip(*zipped)
@@ -115,7 +115,9 @@ class Population:
                     if random.random() < crossover_rate:
                         #crossover chromosome individually
                         new_genome1.genome[i].crossover(new_genome2.genome[i])
-                
+
+                    if random.random() < scramble_rate:
+                        new_genome1.genome[i].scramble(scramble_strength=scramble_strength)
                 
                 self.population = list(self.population)
 
@@ -132,13 +134,15 @@ class Population:
                 self.population.append(new_genome1)
                 self.population = tuple(self.population)
 
-            
-            if generation%10 == 0:
+            if generation%10 == 0: #remove duplicates every 10 generations
                 pop_, diff = self.remove_duplicates()
                 self.population = pop_
                 for i in range(diff):
                     new_individual = Individual(num_chromosomes=self.num_chromosomes, chromosome_size=self.chromosome_size, representation=self.representation, gene_range=self.gene_range, no_overlap=self.no_overlap, num_positives=self.num_positives)
                     new_individual.genome[0].crossover(new_genome1.genome[0])
                     self.population.append(new_individual)
+
+            
+
 
         return fitness_history

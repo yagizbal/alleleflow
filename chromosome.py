@@ -39,10 +39,13 @@ class Chromosome:
 
     def mutate(self, mutation_type, mutation_strength=1.0):
         if mutation_type == "replacement":
-            #swap the values of two random indices
-            index1 = random.randint(0, len(self.genes) - 1)
-            index2 = random.randint(0, len(self.genes) - 1)
-            self.genes[index1], self.genes[index2] = self.genes[index2], self.genes[index1]
+            #swap the values of two random indices, do it until mutation_strength is reached
+            amount_of_mutations = int(len(self.genes)*mutation_strength)
+
+            for i in range(amount_of_mutations):
+                index1 = random.randint(0, len(self.genes) - 1)
+                index2 = random.randint(0, len(self.genes) - 1)
+                self.genes[index1], self.genes[index2] = self.genes[index2], self.genes[index1]
 
         elif mutation_type == "uniform":
             #bounds of mutation are dependant on gene type
@@ -131,6 +134,48 @@ class Chromosome:
     def check_overlap(self):
         return len(set(self.genes)) != len(self.genes)
         #this will return true if there are duplicates in the chromosome
+
+    def distance(self,other,type='hamming'):
+        if type == 'hamming':
+            self_set = set(self.genes)  
+            other_set = set(other.genes)
+            
+            distance = 0
+            
+            # Iterate through union of both sets
+            for gene in self_set.union(other_set):
+            
+                # Check if gene is in one set but not both
+                if gene in self_set and gene not in other_set:
+                    distance += 1
+                elif gene in other_set and gene not in self_set:
+                    distance += 1
+
+            return distance
+
+    def scramble(self, scramble_strength=1.0):
+        """Split chromosome into segments and reassemble randomly"""
+
+        #calculate number of segments based on scramble_strength, scramble_strength=1 means 2 segments
+        segments = int(1/(1-scramble_strength))+1
+
+        
+        genes = self.genes.copy()
+        segment_size = len(genes) // segments
+        
+        shuffled_segments = []
+        for i in range(segments):
+            start = i * segment_size
+            end = start + segment_size
+            shuffled_segment = genes[start:end]
+            shuffled_segments.append(shuffled_segment)
+            
+        random.shuffle(shuffled_segments) 
+
+        shuffled_genes = [gene for segment in shuffled_segments for gene in segment]
+        self.genes = shuffled_genes
+
+
 
 '''
 for i in range(10):
