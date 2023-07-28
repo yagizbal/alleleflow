@@ -73,14 +73,27 @@ class Population:
 
                     fitness_history.append(fitnesses[0][0])
 
-                    #for i in self.population:
-                    #    print(i.genes)
-
-
                     last = percent_completed
 
             population_size = len(self.population)
             replace_num = int(population_size * replacement_rate)
+
+            if generation %2== 0: #remove duplicates every 2 generations
+                dict_uniques = {}
+                #individuals with matching genomes are removed, take set of population
+                for i in self.population:
+                    if str(i.genes) in dict_uniques:
+                        dict_uniques[str(i.genes)].append(i)
+                    else:
+                        dict_uniques[str(i.genes)] = [i]
+
+                pop_, diff = self.remove_duplicates()
+                self.population = pop_
+                for i in range(diff):
+                    new_individual = Individual(num_chromosomes=self.num_chromosomes, chromosome_size=self.chromosome_size, representation=self.representation, gene_range=self.gene_range, no_overlap=self.no_overlap, num_positives=self.num_positives)
+                    new_individual.genome[0].crossover(new_genome1.genome[0])
+                    self.population.append(new_individual)
+
 
             for i in range(int(replace_num)): #this part is the breeding, variation and replacement
                 zipped = zip(self.population, fitnesses) 
@@ -122,27 +135,13 @@ class Population:
                 self.population = list(self.population)
 
 
-                dict_uniques = {}
-                #individuals with matching genomes are removed, take set of population
-                for i in self.population:
-                    if str(i.genes) in dict_uniques:
-                        dict_uniques[str(i.genes)].append(i)
-                    else:
-                        dict_uniques[str(i.genes)] = [i]
+
                 
+
 
                 self.population.append(new_genome1)
                 self.population = tuple(self.population)
 
-            if generation%10 == 0: #remove duplicates every 10 generations
-                pop_, diff = self.remove_duplicates()
-                self.population = pop_
-                for i in range(diff):
-                    new_individual = Individual(num_chromosomes=self.num_chromosomes, chromosome_size=self.chromosome_size, representation=self.representation, gene_range=self.gene_range, no_overlap=self.no_overlap, num_positives=self.num_positives)
-                    new_individual.genome[0].crossover(new_genome1.genome[0])
-                    self.population.append(new_individual)
-
-            
 
 
         return fitness_history
