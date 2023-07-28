@@ -52,6 +52,10 @@ class Population:
             num_generations = 10000
         last = 0
 
+
+        fitness_history = []
+
+
         for generation in range(num_generations):
 
             fitnesses = []
@@ -66,6 +70,8 @@ class Population:
                     print("Best fitness:", fitnesses[0][0])
                     print("Best genome:", self.population[0].genes)
                     print("Min:", np.min(fitnesses), "Max:", np.max(fitnesses), "Avg:", np.mean(fitnesses),"\n")
+
+                    fitness_history.append(fitnesses[0][0])
 
                     #for i in self.population:
                     #    print(i.genes)
@@ -123,17 +129,16 @@ class Population:
                         dict_uniques[str(i.genes)] = [i]
                 
 
-
-                
-
-
                 self.population.append(new_genome1)
                 self.population = tuple(self.population)
 
             
-            pop_, diff = self.remove_duplicates()
-            self.population = pop_
-            for i in range(diff):
-                self.population.append(Individual(num_chromosomes=self.num_chromosomes, chromosome_size=self.chromosome_size, representation=self.representation, gene_range=self.gene_range, no_overlap=self.no_overlap, num_positives=self.num_positives))
-                #print(f"Removed {diff} duplicates, {len(") 
+            if generation%10 == 0:
+                pop_, diff = self.remove_duplicates()
+                self.population = pop_
+                for i in range(diff):
+                    new_individual = Individual(num_chromosomes=self.num_chromosomes, chromosome_size=self.chromosome_size, representation=self.representation, gene_range=self.gene_range, no_overlap=self.no_overlap, num_positives=self.num_positives)
+                    new_individual.genome[0].crossover(new_genome1.genome[0])
+                    self.population.append(new_individual)
 
+        return fitness_history
