@@ -17,13 +17,47 @@ class Population:
         for i in range(population_size):
             self.population.append(Individual(num_chromosomes=num_chromosomes, chromosome_size=chromosome_size, representation=representation, gene_range=gene_range, no_overlap=no_overlap, num_positives=num_positives))
 
-    def train(self,fitness_function, selection_pressure, mutation_rate, mutation_type, mutation_strength, crossover_rate, crossover_type,replacement_rate, num_generations=None, convergence=None,verbose=True):
+
+    def remove_duplicates(self):
+
+        genes_ = [str(i.genes) for i in self.population]
+        
+        unique_genes = set(genes_)
+
+        dict_uniques = {}
+
+        for i in self.population:
+            if str(i.genes) in dict_uniques:
+                dict_uniques[str(i.genes)].append(i)
+            else:
+                dict_uniques[str(i.genes)] = [i]
+
+        
+        dict_uniques = list(dict_uniques.values())
+
+        lost_unique_genes = []
+        for i in dict_uniques:
+            lost_unique_genes.append(i[0].genes)
+        
+        unique_objects_population = []
+        for i in dict_uniques:
+            unique_objects_population.append(i[0])
+
+        return unique_objects_population, len(self.population) - len(unique_objects_population)
+
+
+    def train(self,fitness_function, selection_pressure, mutation_rate, mutation_type, mutation_strength, crossover_rate, 
+              crossover_type,replacement_rate, diversity=None, diversity_percent=None, num_generations=None, convergence=None,verbose=True):
         if num_generations is None and convergence is None:
             num_generations = 10000
         last = 0
 
         for generation in range(num_generations):
 
+            fitnesses = []
+            for genome in self.population:
+                fitnesses.append(fitness_function(individual=genome,representation=self.representation))
+            
 
             if verbose:
                 percent_completed = int(100 * generation / num_generations)
@@ -31,14 +65,13 @@ class Population:
                     print("Percent completed:", percent_completed)
                     print("Best fitness:", fitnesses[0][0])
                     print("Best genome:", self.population[0].genes)
-                    print("length of population", len(self.population))
+                    print("Min:", np.min(fitnesses), "Max:", np.max(fitnesses), "Avg:", np.mean(fitnesses),"\n")
+
+                    #for i in self.population:
+                    #    print(i.genes)
+
 
                     last = percent_completed
-
-            fitnesses = []
-            for genome in self.population:
-                fitnesses.append(fitness_function(individual=genome,representation=self.representation))
-
 
             population_size = len(self.population)
             replace_num = int(population_size * replacement_rate)
@@ -78,11 +111,29 @@ class Population:
                         new_genome1.genome[i].crossover(new_genome2.genome[i])
                 
                 
-
-                #add new genome to population
-                #self.population.append(new_genome1) #this is a tuple so you cannot append
-                #here is how you do it instead
                 self.population = list(self.population)
+
+
+                dict_uniques = {}
+                #individuals with matching genomes are removed, take set of population
+                for i in self.population:
+                    if str(i.genes) in dict_uniques:
+                        dict_uniques[str(i.genes)].append(i)
+                    else:
+                        dict_uniques[str(i.genes)] = [i]
+                
+
+
+                
+
+
                 self.population.append(new_genome1)
                 self.population = tuple(self.population)
+
+            
+            pop_, diff = self.remove_duplicates()
+            self.population = pop_
+            for i in range(diff):
+                self.population.append(Individual(num_chromosomes=self.num_chromosomes, chromosome_size=self.chromosome_size, representation=self.representation, gene_range=self.gene_range, no_overlap=self.no_overlap, num_positives=self.num_positives))
+                #print(f"Removed {diff} duplicates, {len(") 
 
