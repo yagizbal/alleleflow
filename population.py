@@ -48,12 +48,20 @@ class Population:
 
     def train(self,fitness_function, selection_pressure, mutation_rate, mutation_type, mutation_strength, crossover_rate, scramble_rate, scramble_strength,
               crossover_type,replacement_rate, diversity=None, diversity_percent=None, num_generations=None, convergence=None,verbose=True):
+        
+
         if num_generations is None and convergence is None:
             num_generations = 10000
-        last = 0
-
-
         fitness_history = []
+
+        population_size = len(self.population)
+        replace_num = int(population_size * replacement_rate)
+        effective_population = int(selection_pressure * population_size) #this value is the number of top individuals that will be used to breed
+
+        if effective_population < 1:
+            effective_population = 1
+
+        last = 0
 
 
         for generation in range(num_generations):
@@ -61,87 +69,54 @@ class Population:
             fitnesses = []
             for genome in self.population:
                 fitnesses.append(fitness_function(individual=genome,representation=self.representation))
-            
-
+           
             if verbose: #print out important stuff 
                 percent_completed = int(100 * generation / num_generations)
-                if percent_completed > last:
-                    print("Percent completed:", percent_completed)
-                    print("Best fitness:", fitnesses[0][0])
+                if last != percent_completed:
+
+                    print("Percent completed:", percent_completed, "generations", generation)
                     print("Best genome:", self.population[0].genes)
-                    print("Min:", np.min(fitnesses[0]), "Max:", np.max(fitnesses[0]), "Avg:", np.mean(fitnesses[0]),"\n")
+                    print("Best fitness:", np.max(fitnesses), "Lowest fitness:", np.min(fitnesses), "Average:", np.mean(fitnesses),"(standard deviation)", np.std(fitnesses),"\n")
 
                     fitness_history.append(fitnesses[0][0])
-
                     last = percent_completed
 
-            population_size = len(self.population)
-            replace_num = int(population_size * replacement_rate)
-
             if generation %2== 0: #remove duplicates every 2 generations
-                dict_uniques = {}
-                #individuals with matching genomes are removed, take set of population
-                for i in self.population:
-                    if str(i.genes) in dict_uniques:
-                        dict_uniques[str(i.genes)].append(i)
-                    else:
-                        dict_uniques[str(i.genes)] = [i]
 
                 pop_, diff = self.remove_duplicates()
                 self.population = pop_
-                for i in range(diff):
+
+                for difference in range(diff):
                     new_individual = Individual(num_chromosomes=self.num_chromosomes, chromosome_size=self.chromosome_size, representation=self.representation, gene_range=self.gene_range, no_overlap=self.no_overlap, num_positives=self.num_positives)
                     new_individual.genome[0].crossover(new_genome1.genome[0])
                     self.population.append(new_individual)
 
 
-            for i in range(int(replace_num)): #this part is the breeding, variation and replacement
-                zipped = zip(self.population, fitnesses) 
-                zipped = sorted(zipped, key=lambda x: x[1][0], reverse=True)
+            for replace in range(int(replace_num)): #this part is the breeding, variation and replacement
+                zipped = zip(self.population, fitnesses) #this is where the fitnesses are zipped to the population
+                zipped = sorted(zipped, key=lambda x: x[1][0], reverse=True) #this is where the population is sorted by fitness
                 self.population, fitnesses = zip(*zipped)
 
 
-                self.population = self.population[:-1]
-                num_top = int(selection_pressure * population_size) #this value is the number of top individuals that will be used to breed
+                weights = [0.8/effective_population] * effective_population + [0.2/len(self.population)] * (len(self.population) - effective_population) 
+                #the way the weights are calculated is that the top 80% of the population will have equal weights, and the bottom 20% will have equal weights
 
-                if num_top < 1:
-                    num_top = 1
+                new_genome1 = copy.deepcopy(random.choices(self.population, weights=weights)[0])
+                new_genome2 = copy.deepcopy(random.choices(self.population, weights=weights)[0])
 
-                weights = [0.8/num_top] * num_top + [0.2/len(self.population)] * (len(self.population) - num_top)
-
-                best1 = random.choices(self.population, weights=weights)[0]
-                best2 = random.choices(self.population, weights=weights)[0]
-
-                # Recombine into two new genomes
-
-                new_genome1 = copy.deepcopy(best1)
-                new_genome2 = copy.deepcopy(best2)
-
-                #recombinate new_genome1 with new_genome2, note that recombination() is different from crossover()
-
-            
-                for i in range(len(new_genome1.genome)):
+                for gene__ in range(len(new_genome1.genome)):
                     if random.random() < mutation_rate: 
-                        #mutate chromosome individually
-                        new_genome1.genome[i].mutate(mutation_type=mutation_type, mutation_strength=mutation_strength)
+                        new_genome1.genome[gene__].mutate(mutation_type=mutation_type, mutation_strength=mutation_strength) #mutate chromosome
 
                     if random.random() < crossover_rate:
-                        #crossover chromosome individually
-                        new_genome1.genome[i].crossover(new_genome2.genome[i])
+                        new_genome1.genome[gene__].crossover(new_genome2.genome[gene__]) #crossover chromosome individually
 
                     if random.random() < scramble_rate:
-                        new_genome1.genome[i].scramble(scramble_strength=scramble_strength)
+                        new_genome1.genome[gene__].scramble(scramble_strength=scramble_strength)
                 
                 self.population = list(self.population)
-
-
-
-                
-
-
+                self.population = self.population[:-1]
                 self.population.append(new_genome1)
-                self.population = tuple(self.population)
-
 
 
         return fitness_history
