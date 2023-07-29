@@ -25,6 +25,7 @@ def plot(coordinates):
     plt.show()
 
 def generate_pc(cities,width):
+    global coordinates
     coordinates = generate_space(cities,width)
     return coordinates
 
@@ -44,6 +45,8 @@ def calculate_path_distance(path, coordinates,flatten=False):
 
   return total_dist
 
+
+
 def fitness_travelling_salesman(individual, representation):
 
   if isinstance(individual, Individual):
@@ -54,7 +57,7 @@ def fitness_travelling_salesman(individual, representation):
   total_dist = calculate_path_distance(path, coordinates)  
   fitness =  1/total_dist
 
-  return (fitness, total_dist)
+  return (fitness,total_dist)
 
 '''
 coordinates = generate_pc(cities=20, width=100)

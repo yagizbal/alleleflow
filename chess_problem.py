@@ -69,7 +69,7 @@ def fitness_non_attacking(individual, representation, size=8):
         if diagonal_attacks(chessboard, queen[0], queen[1]) > 0:
             attacking_pairs += 1
     fitness = total_pairs - attacking_pairs
-    return (fitness,)
+    return (fitness,attacking_pairs)
 
 
 """
